@@ -53,6 +53,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <None Include="Common.fsx" />
     <None Include="Symmetric.fsx" />
+    <None Include="Asymmetric.fsx" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
