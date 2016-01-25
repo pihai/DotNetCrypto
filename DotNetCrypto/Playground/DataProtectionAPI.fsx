@@ -1,8 +1,8 @@
 ﻿#r "System.Security"
 #load "Common.fsx"
 
-open System.Security.Cryptography
 open Common
+open System.Security.Cryptography
 
 // The optional entropy is comparable with an initialization vector to add some randomness
 let cipher = ProtectedData.Protect(plainBytes, Array.empty<byte>, DataProtectionScope.CurrentUser)

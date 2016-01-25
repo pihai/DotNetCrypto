@@ -1,6 +1,7 @@
 ﻿module Common
 
 open System.Text
+open System.Security.Cryptography
 
 let encode (text: string) = Encoding.UTF8.GetBytes text
 let decode (bytes: byte array) = Encoding.UTF8.GetString bytes

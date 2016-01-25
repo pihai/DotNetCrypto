@@ -55,6 +55,7 @@
     <None Include="Symmetric.fsx" />
     <None Include="Asymmetric.fsx" />
     <None Include="DataProtectionAPI.fsx" />
+    <None Include="Integrity.fsx" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

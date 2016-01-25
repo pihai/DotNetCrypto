@@ -1,9 +1,8 @@
 ﻿#load "Common.fsx"
 
 open Common
-
-open System.Security.Cryptography
 open System.IO
+open System.Security.Cryptography
 
 let encrypt plain =
   use aes = Aes.Create()
