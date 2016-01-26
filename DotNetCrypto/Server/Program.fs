@@ -10,8 +10,13 @@ open System.Xml
 open FSharp.Data
 open Suave.Successful
 open Suave.Filters
-    
+open System.Security.Cryptography
+open System
+open System.Text
+
 let port = 8083
+
+let privateKeyBytes = System.Convert.FromBase64String("RUNTMiAAAACvCjDrBMt8pZGjdy4OpXfj/KEhnzFvRK7097otjloCOoJGCA3upVQBuWB8TAgU5FcY0uSFE8MEmK2HyKrOvrrd04MhHt81twN0v0vxpaZQ2idSIVmo1/lG+ICN6kk2H44=")
 
 type private Commands = 
   | RequestLicense of AsyncReplyChannel<string option>
@@ -71,7 +76,16 @@ let main argv =
         path "/GetLicense" >=> (fun ctx -> async {
           let! license = licenseManager.PostAndAsyncReply RequestLicense
           if license.IsSome then
-            return! ctx |> OK license.Value
+            let sb = System.Text.StringBuilder()
+            use signer = new ECDsaCng(CngKey.Import(privateKeyBytes, CngKeyBlobFormat.EccPrivateBlob))
+            let signature = signer.SignData(Encoding.UTF8.GetBytes(license.Value))
+
+            let response = 
+              sb.AppendLine(license.Value)
+                .Append(Convert.ToBase64String(signature))
+                .ToString()
+
+            return! ctx |> OK response
           else
             return! ctx |> RequestErrors.FORBIDDEN "No free license."
         })

@@ -3,16 +3,29 @@
 
 open System.Net.Http
 open System.Net
+open System
+open System.Text
+open System.Security.Cryptography
 
 let port = 8083
+
+let publicKeyBytes = System.Convert.FromBase64String("RUNTMSAAAACvCjDrBMt8pZGjdy4OpXfj/KEhnzFvRK7097otjloCOoJGCA3upVQBuWB8TAgU5FcY0uSFE8MEmK2HyKrOvrrd")
 
 let requestLicenseToken ipAddress = async {
   use client = new HttpClient()
   let! response = client.GetAsync(sprintf "http://%s:%d/GetLicense" ipAddress port) |> Async.AwaitTask
   if response.IsSuccessStatusCode then
-    let! token = response.Content.ReadAsStringAsync() |> Async.AwaitTask
-    if not <| System.String.IsNullOrEmpty(token) then
-      return Some token
+    let! content = response.Content.ReadAsStringAsync() |> Async.AwaitTask
+    let lines = content.Split([|System.Environment.NewLine |], System.StringSplitOptions.None)
+    if lines.Length = 2 then
+      let token = lines.[0]
+      let signature = lines.[1]
+      use sigVerifier = new ECDsaCng(CngKey.Import(publicKeyBytes, CngKeyBlobFormat.EccPublicBlob))
+      if sigVerifier.VerifyData(Encoding.UTF8.GetBytes(token), Convert.FromBase64String(signature)) then
+        return Some token
+      else
+        printfn "Verification failed."
+        return None
     else
       return None
   else
