@@ -52,6 +52,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <None Include="Common.fsx" />
+    <None Include="Random.fsx" />
     <None Include="Symmetric.fsx" />
     <None Include="Asymmetric.fsx" />
     <None Include="DataProtectionAPI.fsx" />

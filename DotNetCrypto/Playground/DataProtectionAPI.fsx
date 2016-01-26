@@ -8,3 +8,5 @@ open System.Security.Cryptography
 let cipher = ProtectedData.Protect(plainBytes, Array.empty<byte>, DataProtectionScope.CurrentUser)
 let decryptedBytes = ProtectedData.Unprotect(cipher, Array.empty<byte>, DataProtectionScope.CurrentUser)
 let decryptedTest = decode decryptedBytes
+
+// one of the problems of DPAPI is that i relies on the stength of the users password
