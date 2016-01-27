@@ -9,6 +9,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Client", "Client\Client.fsp
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Server", "Server\Server.fsproj", "{B8C94F08-FDE7-4A97-A6A8-EEFC997B6398}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "KeyGenerator", "KeyGenerator\KeyGenerator.fsproj", "{992849DA-1BBD-4A6C-9D79-725D60DF685D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{B8C94F08-FDE7-4A97-A6A8-EEFC997B6398}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B8C94F08-FDE7-4A97-A6A8-EEFC997B6398}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B8C94F08-FDE7-4A97-A6A8-EEFC997B6398}.Release|Any CPU.Build.0 = Release|Any CPU
+		{992849DA-1BBD-4A6C-9D79-725D60DF685D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{992849DA-1BBD-4A6C-9D79-725D60DF685D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{992849DA-1BBD-4A6C-9D79-725D60DF685D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{992849DA-1BBD-4A6C-9D79-725D60DF685D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

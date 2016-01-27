@@ -6,30 +6,60 @@ open System.Net
 open System
 open System.Text
 open System.Security.Cryptography
+open System.Xml
 
 let port = 8083
 
-let publicKeyBytes = System.Convert.FromBase64String("RUNTMSAAAACvCjDrBMt8pZGjdy4OpXfj/KEhnzFvRK7097otjloCOoJGCA3upVQBuWB8TAgU5FcY0uSFE8MEmK2HyKrOvrrd")
+let publicKeyBytes = Convert.FromBase64String("RUNTMSAAAACvCjDrBMt8pZGjdy4OpXfj/KEhnzFvRK7097otjloCOoJGCA3upVQBuWB8TAgU5FcY0uSFE8MEmK2HyKrOvrrd")
+
+type LicenseValidationResult =
+  | Success of string
+  | NoFreeLicense
+  | KeySignatureCheckFailed
+  | WrongFormat
+  | ServerSignatureCheckFailed
+  | UnknownStatusCode of HttpStatusCode
+
+let validateLicense (response: string) =
+  try
+    let lines = response.Split([|System.Environment.NewLine |], System.StringSplitOptions.None)
+    if lines.Length = 2 then
+      let license = lines.[0]
+      let serverSignature = lines.[1]
+
+      let licenseXml = XmlDocument()
+      licenseXml.LoadXml license
+
+      let keySig = licenseXml.SelectSingleNode("/license/sig").InnerText
+      let keyData = licenseXml.SelectSingleNode("/license/data").InnerXml
+
+      use keySigVerifier = new ECDsaCng(CngKey.Import(publicKeyBytes, CngKeyBlobFormat.EccPublicBlob))
+      if keySigVerifier.VerifyData(Encoding.UTF8.GetBytes(keyData), Convert.FromBase64String(keySig)) then
+        let serverPubKey = licenseXml.SelectSingleNode("/license/data/pub-key").InnerText
+        use serverSigVerifier = new ECDsaCng(CngKey.Import(serverPubKey |> Convert.FromBase64String, CngKeyBlobFormat.EccPublicBlob))
+        if serverSigVerifier.VerifyData(Encoding.UTF8.GetBytes(license), serverSignature |> Convert.FromBase64String) then
+          Success (licenseXml.SelectSingleNode("/license/data/nr").InnerText)
+        else
+          ServerSignatureCheckFailed
+      else
+        KeySignatureCheckFailed
+    else
+      WrongFormat
+  with ex ->
+    printfn "%A" ex
+    WrongFormat
+
 
 let requestLicenseToken ipAddress = async {
   use client = new HttpClient()
   let! response = client.GetAsync(sprintf "http://%s:%d/GetLicense" ipAddress port) |> Async.AwaitTask
   if response.IsSuccessStatusCode then
     let! content = response.Content.ReadAsStringAsync() |> Async.AwaitTask
-    let lines = content.Split([|System.Environment.NewLine |], System.StringSplitOptions.None)
-    if lines.Length = 2 then
-      let token = lines.[0]
-      let signature = lines.[1]
-      use sigVerifier = new ECDsaCng(CngKey.Import(publicKeyBytes, CngKeyBlobFormat.EccPublicBlob))
-      if sigVerifier.VerifyData(Encoding.UTF8.GetBytes(token), Convert.FromBase64String(signature)) then
-        return Some token
-      else
-        printfn "Verification failed."
-        return None
-    else
-      return None
+    return validateLicense content
+  elif response.StatusCode = HttpStatusCode.Forbidden then
+    return NoFreeLicense
   else
-    return None
+    return UnknownStatusCode response.StatusCode
   }
 
 let releaseLicenseToken ipAddress token = async {
@@ -50,16 +80,17 @@ let main argv =
     System.Environment.Exit(0)
 
   let ipAddress = argv.[0]
-  let licenseToken = requestLicenseToken ipAddress |> Async.RunSynchronously
+  let license = requestLicenseToken ipAddress |> Async.RunSynchronously
 
-  if licenseToken.IsSome then
+  match license with
+  | Success(key) ->
     try
       printfn "Running..."
       System.Console.Read() |> ignore
     finally
-      releaseLicenseToken ipAddress licenseToken.Value |> Async.RunSynchronously
-  else
-    printfn "Got no license."
-    System.Console.Read() |> ignore
+      releaseLicenseToken ipAddress key |> Async.RunSynchronously
+  | x -> printfn "Failed due to: %A" x
+
+  Console.Read() |> ignore
 
   0 // return an integer exit code
