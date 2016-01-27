@@ -5,15 +5,11 @@ open System.IO
 open System.Security.Cryptography
 
 let encrypt plain =
-  use aes = Aes.Create()
-  // shortcut for: use aes = new AesCryptoServiceProvider()
-
+  use aes = Aes.Create() // shortcut for: use aes = new AesCryptoServiceProvider()
   use ms = new MemoryStream()
   use cs = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write)
-
   cs.Write(plain, 0, Array.length plain)
   cs.FlushFinalBlock()
-
   ms.ToArray(), aes.Key, aes.IV
 
 let decrypt cipher key iv =

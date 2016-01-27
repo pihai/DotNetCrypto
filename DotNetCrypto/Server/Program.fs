@@ -124,6 +124,7 @@ let main argv =
   printfn ""
   Clipboard.SetText(publicKey)
   printfn "Copied server id to clipboard."
+
   startWebServer serverConfig app
   
   0
