@@ -8,7 +8,7 @@ open System.Text
 open System.Security.Cryptography
 open System.Xml
 
-let port = 8083
+let port = 80
 
 let publicKeyBytes = Convert.FromBase64String("RUNTMSAAAACvCjDrBMt8pZGjdy4OpXfj/KEhnzFvRK7097otjloCOoJGCA3upVQBuWB8TAgU5FcY0uSFE8MEmK2HyKrOvrrd")
 
@@ -93,4 +93,4 @@ let main argv =
 
   Console.Read() |> ignore
 
-  0 // return an integer exit code
+  0

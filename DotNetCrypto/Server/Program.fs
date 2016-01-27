@@ -12,7 +12,7 @@ open System
 open System.Text
 open System.Windows.Forms
 
-let port = 8083
+let port = 80
 let private keyName = "LicenseServerKey"
 
 type private Commands = 
