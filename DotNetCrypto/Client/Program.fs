@@ -7,9 +7,9 @@ open System
 open System.Text
 open System.Security.Cryptography
 open System.Xml
+open System.Configuration
 
 let port = 80
-
 let publicKeyBytes = Convert.FromBase64String("RUNTMSAAAACvCjDrBMt8pZGjdy4OpXfj/KEhnzFvRK7097otjloCOoJGCA3upVQBuWB8TAgU5FcY0uSFE8MEmK2HyKrOvrrd")
 
 type LicenseValidationResult =
@@ -18,6 +18,7 @@ type LicenseValidationResult =
   | KeySignatureCheckFailed
   | WrongFormat
   | ServerSignatureCheckFailed
+  | ServerNotFound
   | UnknownStatusCode of HttpStatusCode
 
 let validateLicense (response: string) =
@@ -51,15 +52,18 @@ let validateLicense (response: string) =
 
 
 let requestLicenseToken ipAddress = async {
-  use client = new HttpClient()
-  let! response = client.GetAsync(sprintf "http://%s:%d/GetLicense" ipAddress port) |> Async.AwaitTask
-  if response.IsSuccessStatusCode then
-    let! content = response.Content.ReadAsStringAsync() |> Async.AwaitTask
-    return validateLicense content
-  elif response.StatusCode = HttpStatusCode.Forbidden then
-    return NoFreeLicense
-  else
-    return UnknownStatusCode response.StatusCode
+  try
+    use client = new HttpClient()
+    let! response = client.GetAsync(sprintf "http://%s:%d/GetLicense" ipAddress port) |> Async.AwaitTask
+    if response.IsSuccessStatusCode then
+      let! content = response.Content.ReadAsStringAsync() |> Async.AwaitTask
+      return validateLicense content
+    elif response.StatusCode = HttpStatusCode.Forbidden then
+      return NoFreeLicense
+    else
+      return UnknownStatusCode response.StatusCode
+  with
+    | _ -> return ServerNotFound
   }
 
 let releaseLicenseToken ipAddress token = async {
@@ -75,20 +79,16 @@ let releaseLicenseToken ipAddress token = async {
 
 [<EntryPoint>]
 let main argv =
-  if argv.Length <> 1 then
-    printfn "Please provide the ip-address of the license server as first argument!"
-    System.Environment.Exit(0)
-
-  let ipAddress = argv.[0]
-  let license = requestLicenseToken ipAddress |> Async.RunSynchronously
-
+  let serverAddress = ConfigurationManager.AppSettings.["ServerAddress"]
+  printfn "License server address: %A" serverAddress
+  let license = requestLicenseToken serverAddress |> Async.RunSynchronously
   match license with
   | Success(key) ->
     try
       printfn "Running..."
       System.Console.Read() |> ignore
     finally
-      releaseLicenseToken ipAddress key |> Async.RunSynchronously
+      releaseLicenseToken serverAddress key |> Async.RunSynchronously
   | x -> printfn "Failed due to: %A" x
 
   Console.Read() |> ignore
